@@ -50,23 +50,50 @@ void display(char *str)
 {
   //handle wrapping by splitting the string into up to 3 lines of 31 chars
   char str1[32], str2[32], str3[32] = {'\0'};  //create three 32 byte string arrays
+  int nextSpace = 0;  //used to find the next space in str
+  int currStr = 1;    //current string to write into
 
   for (int i = 0; i < strlen(str); i++)
   {
-    //if i is less than 31 write to str1
-    if (i < 31)
+    //read next character into current string
+    if (currStr == 1)
     {
       str1[i] = str[i];
     }
-    //if i is between 31 and 62 write to str2
-    else if (i < 62)
+
+    else if (currStr == 2)
     {
-      str2[i - 31] = str[i];
+      str2[i % 31] = str[i];
     }
-    //if i is between 62 and 93 write to str3
-    else if (i < 93)
+
+    else if (currStr == 3)
     {
-      str3[i - 62] = str[i];
+      str3[i % 31] = str[i];
+    }
+    //if currStr is 4 store the current i value in nextSpace and break
+    else if (currStr == 4)
+    {
+      nextSpace = i;
+      break;
+    }
+    
+    //if i has caught up to nextSpace, find the next space
+    if (i == nextSpace)
+    {
+      for (int j = i; j < strlen(str); j++)
+      {
+        //update nextSpace
+        if (str[j] == ' ' || str[j] == '\0')
+        {
+          nextSpace = j;
+        }
+
+        //if nextSpace is after the end of the current string, move to the next string
+        if ((i % 31) + 1 + nextSpace - i >= 31)
+        {
+          currStr++;
+        }
+      }
     }
   }
 
