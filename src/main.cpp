@@ -76,7 +76,7 @@ void display(char *str)
       nextSpace = i;
       break;
     }
-    
+
     //if i has caught up to nextSpace, find the next space
     if (i == nextSpace)
     {
@@ -86,12 +86,12 @@ void display(char *str)
         if (str[j] == ' ' || str[j] == '\0')
         {
           nextSpace = j;
-        }
-
-        //if nextSpace is after the end of the current string, move to the next string
-        if ((i % 31) + 1 + nextSpace - i >= 31)
-        {
-          currStr++;
+          //if nextSpace is after the end of the current string, move to the next string
+          if ((i % 31) + 1 + nextSpace - i >= 31)
+          {
+            currStr++;
+          }
+          break;
         }
       }
     }
