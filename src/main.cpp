@@ -25,51 +25,58 @@
 #include <string.h>
 #include <U8g2lib.h>
 #include <SPI.h>
+#include <wrapping.hpp>
 
 //definitions
 #define OLED_DC  D2
 #define OLED_CS  D6
 #define OLED_RST D3
 U8G2_SSD1309_128X64_NONAME2_1_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST);
-void display(char *str);
+void display(char disp[3][32]);
 
 void setup() {
   u8g2.begin();           //start u8g2
+  //TEST
+  Serial.begin(115200);  //open serial connection for debugging
+  //TEST
 }
 
 void loop() {
-  char testStr[] = "this is a test string to handle wrapping"; //create test string
-  display(testStr);
-  delay(2000);
+  char input[] = "this is a significantly longer test string which contains several words of longer length. It should be displayed using more than three lines if the program is functioning correctly."; //create test string
+  int result = 0; //initialize result as 0
+  do
+  {
+    char disp[3][32] = {'\0'};  //initialize array of three C strings
+    result = wrap(disp, input, result);
+    //if result is -1 display an error message and break early
+    if (result == -1)
+    {
+      //write error message to disp[0]
+      char failMessage[32] = "Failed to display text.";
+      for (int i = 0; i < 32; i++)
+      {
+        disp[0][i] = failMessage[i];
+      }
+      //clear disp 1 and 2
+      disp[1][0] = '\0';
+      disp[2][0] = '\0';
+      //display disp
+      display(disp);
+      //wait 5s
+      delay(5000);
+      //break
+      break;
+    }
+    //otherwise the method was successfully completed, display the output and wait 5s
+    display(disp);
+    delay(5000);
+  }
+  while (result != 0);
 }
 
 //function to display text
-//TODO - remove whitespace on first characters of lines
-//TODO - wrapping based on words rather than characters
-void display(char *str)
+void display(char disp[3][32])
 {
-  //handle wrapping by splitting the string into up to 3 lines of 31 chars
-  char str1[32], str2[32], str3[32] = {'\0'};  //create three 32 byte string arrays
-
-  for (int i = 0; i < strlen(str); i++)
-  {
-    //if i is less than 31 write to str1
-    if (i < 31)
-    {
-      str1[i] = str[i];
-    }
-    //if i is between 31 and 62 write to str2
-    else if (i < 62)
-    {
-      str2[i - 31] = str[i];
-    }
-    //if i is between 62 and 93 write to str3
-    else if (i < 93)
-    {
-      str3[i - 62] = str[i];
-    }
-  }
-
   //display text
   u8g2.firstPage();
   do
@@ -77,9 +84,9 @@ void display(char *str)
     u8g2.clearBuffer();                      //clear memory
     u8g2.setFont(u8g2_font_4x6_mf);          //set font
     u8g2.setFontPosTop();                    //start writing in the top left corner of the display
-    u8g2.drawStr(0, 5, str1);                //write str1 to memory
-    u8g2.drawStr(0, 15, str2);               //write str2 to memory
-    u8g2.drawStr(0, 25, str3);               //write str3 to memory
+    u8g2.drawStr(0, 5, disp[0]);             //write disp[0] to memory
+    u8g2.drawStr(0, 15, disp[1]);            //write disp[1] to memory
+    u8g2.drawStr(0, 25, disp[2]);            //write disp[2] to memory
     u8g2.sendBuffer();                       //display memory content
   } while(u8g2.nextPage());
 }
