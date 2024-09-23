@@ -42,36 +42,45 @@ void setup() {
 }
 
 void loop() {
-  char input[] = "this is a significantly longer test string which contains several words of longer length. It should be displayed using more than three lines if the program is functioning correctly."; //create test string
+  char input[256] = ""; //create test string
   int result = 0; //initialize result as 0
-  do
+  //get string from serial
+  if (Serial.available())
   {
-    char disp[3][32] = {'\0'};  //initialize array of three C strings
-    result = wrap(disp, input, result);
-    //if result is -1 display an error message and break early
-    if (result == -1)
-    {
-      //write error message to disp[0]
-      char failMessage[32] = "Failed to display text.";
-      for (int i = 0; i < 32; i++)
-      {
-        disp[0][i] = failMessage[i];
-      }
-      //clear disp 1 and 2
-      disp[1][0] = '\0';
-      disp[2][0] = '\0';
-      //display disp
-      display(disp);
-      //wait 5s
-      delay(5000);
-      //break
-      break;
-    }
-    //otherwise the method was successfully completed, display the output and wait 5s
-    display(disp);
-    delay(5000);
+    Serial.readBytesUntil('\n', input, 256);
   }
-  while (result != 0);
+  //if input is not empty, process it
+  if (strcmp(input, "") != 0)
+  {
+    do
+    {
+      char disp[3][32] = {'\0'};  //initialize array of three C strings
+      result = wrap(disp, input, result);
+      //if result is -1 display an error message and break early
+      if (result == -1)
+      {
+        //write error message to disp[0]
+        char failMessage[32] = "Failed to display text.";
+        for (int i = 0; i < 32; i++)
+        {
+          disp[0][i] = failMessage[i];
+        }
+        //clear disp 1 and 2
+        disp[1][0] = '\0';
+        disp[2][0] = '\0';
+        //display disp
+        display(disp);
+        //wait 5s
+        delay(5000);
+        //break
+        break;
+      }
+      //otherwise the method was successfully completed, display the output and wait 5s
+      display(disp);
+      delay(5000);
+   }
+   while (result != 0);
+  }
 }
 
 //function to display text
