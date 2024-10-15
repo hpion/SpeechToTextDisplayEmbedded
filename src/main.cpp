@@ -26,6 +26,7 @@
 #include <U8g2lib.h>
 #include <SPI.h>
 #include <wrapping.hpp>
+#include <BluetoothSerial.h>
 
 //definitions
 #define OLED_DC  D2
@@ -33,22 +34,17 @@
 #define OLED_RST D3
 U8G2_SSD1309_128X64_NONAME2_1_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST);
 void display(char disp[3][32]);
+BluetoothSerial btserial;
 
 void setup() {
-  u8g2.begin();           //start u8g2
-  //TEST
-  Serial.begin(115200);  //open serial connection for debugging
-  //TEST
+  btserial.begin("SpeechToTextDisplay");
 }
 
 void loop() {
-  char input[256] = ""; //create test string
+  char input[256] = "\n"; //create test string
   int result = 0; //initialize result as 0
-  //get string from serial
-  if (Serial.available())
-  {
-    Serial.readBytesUntil('\n', input, 256);
-  }
+  //get string from btserial
+  btserial.readBytesUntil('\n', input, 256);
   //if input is not empty, process it
   if (strcmp(input, "") != 0)
   {
