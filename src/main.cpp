@@ -3,21 +3,9 @@
   Date Created: 9/18/2024
   Date Modified: 9/18/2024
 
-  This program connects to a smartphone application using serial over bluetooth.
+  This program connects to a smartphone application using bluetooth.
   The phone application provides strings to this application which are
   displayed on a connected display using the U8Gg2 library.
-  
-  The program will also display information about the connection status and battery life.
-
-  Below is a ASCII representation of the display layout
-
-   _____________________________________
-  | text display area                   |
-  |                                     |
-  |                                     |
-  |_____________________________________|
-  |Battery Indicator |Connection Status |
-  |__________________|__________________|
 */
 
 //include statements
@@ -26,7 +14,7 @@
 #include <U8g2lib.h>
 #include <SPI.h>
 #include <wrapping.hpp>
-#include <BluetoothSerial.h>
+#include <NimBLEDevice.h>
 
 //definitions
 #define OLED_DC  D2
@@ -34,17 +22,45 @@
 #define OLED_RST D3
 U8G2_SSD1309_128X64_NONAME2_1_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST);
 void display(char disp[3][32]);
-BluetoothSerial btserial;
+NimBLECharacteristic *status;
+NimBLECharacteristic *buffer;
 
 void setup() {
-  btserial.begin("SpeechToTextDisplay");
+  u8g2.begin(); //start u8g2
+
+  NimBLEDevice::init("SpeechToTextGlasses");  //initialize NimBLE with device name
+
+  NimBLEServer *pServer = NimBLEDevice::createServer(); //create server variable
+  NimBLEService *pService = pServer->createService("ABCD"); //create service for the BLE server
+  buffer = pService->createCharacteristic("1111"); //create buffer characteristic for reading input from mobile app
+  status = pService->createCharacteristic("2222"); //create status characteristic to inform mobile app when the buffer is ready to be written to
+  pService->start();  //start the service
+  buffer->setValue("");  //set buffer to empty string
+  status->setValue("1");  //set status to 1, ready to recieve string
+
+  NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising(); //create advertising variable
+  pAdvertising->addServiceUUID("STTG"); //set service uuid for advertising
+  pAdvertising->start(); //start advertising the server
 }
 
 void loop() {
-  char input[256] = "\n"; //create test string
+  char input[256] = "\0"; //create test string
   int result = 0; //initialize result as 0
-  //get string from btserial
-  btserial.readBytesUntil('\n', input, 256);
+  //if status is 0 read contents of buffer
+  std::string currStatus = status->getValue();  //get current value of status
+  if (currStatus.compare("0") == 0)
+  {
+    //read buffer into input
+    std::string currBuffer = buffer->getValue();
+    std::size_t length = currBuffer.copy(input, 255, 0);
+    input[length] = '\0';
+
+    //clear buffer
+    buffer->setValue("");
+
+    //set status to 1
+    status->setValue("1");
+  }
   //if input is not empty, process it
   if (strcmp(input, "") != 0)
   {
@@ -74,6 +90,7 @@ void loop() {
       //otherwise the method was successfully completed, display the output and wait 5s
       display(disp);
       delay(5000);
+      u8g2.clear();
    }
    while (result != 0);
   }
