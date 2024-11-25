@@ -27,6 +27,7 @@ NimBLECharacteristic *buffer;
 
 void setup() {
   u8g2.begin(); //start u8g2
+  Serial.begin(115200); //testing
 
   NimBLEDevice::init("SpeechToTextGlasses");  //initialize NimBLE with device name
 
@@ -47,10 +48,8 @@ void loop() {
   char input[256] = "\0"; //create test string
   int result = 0; //initialize result as 0
   //if status is 0 read contents of buffer
-  std::string currStatus = status->getValue();  //get current value of status
-  if (currStatus.compare("0") == 0)
+  if (status->getValue()[0] == '0')
   {
-    //read buffer into input
     std::string currBuffer = buffer->getValue();
     std::size_t length = currBuffer.copy(input, 255, 0);
     input[length] = '\0';
@@ -87,9 +86,22 @@ void loop() {
         //break
         break;
       }
-      //otherwise the method was successfully completed, display the output and wait 5s
+      //otherwise the method was successfully completed, display the output and wait based on the number of lines displayed
       display(disp);
-      delay(5000);
+      
+      //select time to display text
+      int dispTime = 5000;  //default to 5s
+      if (disp[1][0] == '\0' && disp[2][0] == '\0')
+      {
+        dispTime = 3000;
+      }
+      else if (disp[1][0] == '\0' || disp[2][0] == '\0')
+      {
+        dispTime = 4000;
+      }
+
+      delay(dispTime);
+      
       u8g2.clear();
    }
    while (result != 0);
